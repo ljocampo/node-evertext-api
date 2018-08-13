@@ -17,7 +17,7 @@ beforeEach((done) => {
 });
 
 describe('POST /notes', () => {
-  it('should create a new todo', (done) => {
+  it('should create a new note', (done) => {
     var text = 'Test note text';
     request(app)
       .post('/notes')
