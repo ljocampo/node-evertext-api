@@ -21,7 +21,13 @@ app.post('/notes', (req, res) => {
   })
 });
 
-
+app.get('/notes', (req, res) => {
+  Note.find().then((notes) => {
+    res.send({notes})
+  },(err) => {
+    res.status(400).send(err);
+  });
+});
 
 app.listen(3000, () => {
   console.log('Started on port 3000');
