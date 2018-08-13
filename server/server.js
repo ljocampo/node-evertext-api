@@ -1,30 +1,28 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/EverPadApp');
+const { mongoose } = require('./db/mongoose');
+const {Note} = require('./models/note');
+const {User} = require('./models/user');
 
-var Pad = mongoose.model('Pad', {
-  text: {
-    type: String
-  },
-  isTodo: {
-    type: Boolean
-  },
-  completed: {
-    type: Boolean
-  },
-  completedAt: {
-    type: Number
-  }
+var app = express();
+
+app.use(bodyParser.json());
+
+app.post('/notes', (req, res) => {
+  var note = new Note({
+    text: req.body.text
+  });
+
+  note.save().then((doc) => {
+    res.send(doc);
+  },(e) => {
+    res.status(400).send(e);
+  })
 });
 
-var newPad = new Pad({
-  text: 'Cook dinner'
-  isTodo: true
-});
 
-newPad.save().then((doc) => {
-  console.log('Saved pad', doc);
-}, (err) => {
-  console.log('Unable to save pad');
-});
+
+app.listen(3000, () => {
+  console.log('Started on port 3000');
+})
