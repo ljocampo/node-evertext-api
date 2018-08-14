@@ -1,5 +1,8 @@
 const expect = require('expect');
 const request = require('supertest');
+const {
+  ObjectID
+} = require('mongodb');
 
 const {
   app
@@ -8,7 +11,13 @@ const {
   Note
 } = require('../models/note');
 
-const notes = [{text:'first test note'},{text:'second test note'}]
+const notes = [{
+  _id: new ObjectID(),
+  text: 'first test note'
+}, {
+  _id: new ObjectID(),
+  text: 'second test note'
+}]
 
 beforeEach((done) => {
   Note.remove({}).then(() => {
@@ -33,7 +42,9 @@ describe('POST /notes', () => {
           return done(err);
         }
 
-        Note.find({text}).then((notes) => {
+        Note.find({
+          text
+        }).then((notes) => {
           expect(notes.length).toBe(1);
           expect(notes[0].text).toBe(text);
           done();
@@ -62,11 +73,37 @@ describe('POST /notes', () => {
 describe('GET /notes', () => {
   it('should get all notes', (done) => {
     request(app)
-    .get('/notes')
-    .expect(200)
-    .expect((res) => {
-      expect(res.body.notes.length).toBe(2);
-    })
+      .get('/notes')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.notes.length).toBe(2);
+      })
+      .end(done);
+  });
+});
+
+describe('GET /notes/:id', () => {
+  it('should get a note', (done) => {
+    request(app)
+      .get(`/notes/${notes[0]._id.toHexString()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.note.text).toBe(notes[0].text)
+      })
+      .end(done);
+  });
+
+  it('should return 404 if note not found', (done) => {
+    request(app)
+    .get(`/notes/${new ObjectID().toHexString()}`)
+    .expect(404)
+    .end(done);
+  });
+
+  it('should return 404 on invalid', (done) => {
+    request(app)
+    .get(`/notes/123abc`)
+    .expect(404)
     .end(done);
   });
 });
