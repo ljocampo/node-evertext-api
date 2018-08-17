@@ -95,15 +95,65 @@ describe('GET /notes/:id', () => {
 
   it('should return 404 if note not found', (done) => {
     request(app)
-    .get(`/notes/${new ObjectID().toHexString()}`)
-    .expect(404)
-    .end(done);
+      .get(`/notes/${new ObjectID().toHexString()}`)
+      .expect(404)
+      .end(done);
   });
 
-  it('should return 404 on invalid', (done) => {
+  it('should return 404 on invalid id', (done) => {
     request(app)
-    .get(`/notes/123abc`)
-    .expect(404)
-    .end(done);
+      .get(`/notes/123abc`)
+      .expect(404)
+      .end(done);
+  });
+});
+
+describe('DELETE /notes/:id', () => {
+  it('should remove a note', (done) => {
+    var hexId = notes[1]._id.toHexString()
+    request(app)
+      .delete(`/notes/${hexId}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.note._id).toBe(hexId);
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Note.findById(hexId).then((note) => {
+          expect(note).toNotExist();
+          done();
+        }).catch((err) => done(err));
+      });
+  });
+
+  it('should return 404 if note not found', (done) => {
+    request(app)
+      .delete(`/notes/${new ObjectID().toHexString()}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it('should return 404 on invalid id', (done) => {
+    request(app)
+      .delete(`/notes/123abc`)
+      .expect(404)
+      .end(done);
+  });
+});
+
+describe('PATCH /notes/:id', () => {
+  xit('should update a note', (done) => {
+
+  });
+
+  xit('should return 404 if note not found', (done) => {
+
+  });
+
+  xit('should return 404 on invalid id', (done) => {
+
   });
 });
