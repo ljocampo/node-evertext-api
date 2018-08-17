@@ -16,7 +16,9 @@ const notes = [{
   text: 'first test note'
 }, {
   _id: new ObjectID(),
-  text: 'second test note'
+  text: 'second test note',
+  completed: true,
+  completedAt: 333
 }]
 
 beforeEach((done) => {
@@ -145,15 +147,31 @@ describe('DELETE /notes/:id', () => {
 });
 
 describe('PATCH /notes/:id', () => {
-  xit('should update a note', (done) => {
-
+  it('should update a note', (done) => {
+    var hexId = notes[1]._id.toHexString()
+    request(app)
+      .patch(`/notes/${hexId}`)
+      .send({text: 'update text', completed: true})
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.note.text).toBe('update text');
+        expect(res.body.note.completed).toBe(true);
+        expect(res.body.note.completedAt).toBeA('number');
+      })
+      .end(done);
   });
 
-  xit('should return 404 if note not found', (done) => {
-
-  });
-
-  xit('should return 404 on invalid id', (done) => {
-
+  it('should clear completedAt when todo is not completed', (done) => {
+    var hexId = notes[1]._id.toHexString()
+    request(app)
+      .patch(`/notes/${hexId}`)
+      .send({text: 'update text', completed: false})
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.note.text).toBe('update text');
+        expect(res.body.note.completed).toBe(false);
+        expect(res.body.note.completedAt).toNotExist();
+      })
+      .end(done);
   });
 });
