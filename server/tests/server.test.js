@@ -175,3 +175,43 @@ describe('PATCH /notes/:id', () => {
       .end(done);
   });
 });
+
+describe('POST /users', () => {
+  it('should create a new user', (done) => {
+    var email = 'luis@luis.com';
+    var password = 'p45w0rd';
+    var tokens = [
+      {
+        access: 'auth'
+      },
+      {
+        token: 'at0k3n'
+      }
+    ]
+    request(app)
+      .post('/users')
+      .send({
+        email,
+        password,
+        tokens
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.email).toBe(email)
+        expect(res.body.password).toBe(password)
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Note.find({
+          email
+        }).then((users) => {
+          expect(users.length).toBe(1);
+          expect(users[0].email).toBe(email);
+          done();
+        }).catch((err) => done(err));
+      });
+  });
+});
