@@ -10,22 +10,16 @@ const {
 const {
   Note
 } = require('../models/note');
+const {User} = require('../models/user');
+const {
+  notes,
+  populateNotes,
+  users,
+  populateUsers
+} = require('./seed/seed');
 
-const notes = [{
-  _id: new ObjectID(),
-  text: 'first test note'
-}, {
-  _id: new ObjectID(),
-  text: 'second test note',
-  completed: true,
-  completedAt: 333
-}]
-
-beforeEach((done) => {
-  Note.remove({}).then(() => {
-    return Note.insertMany(notes);
-  }).then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateNotes);
 
 describe('POST /notes', () => {
   it('should create a new note', (done) => {
@@ -151,7 +145,10 @@ describe('PATCH /notes/:id', () => {
     var hexId = notes[1]._id.toHexString()
     request(app)
       .patch(`/notes/${hexId}`)
-      .send({text: 'update text', completed: true})
+      .send({
+        text: 'update text',
+        completed: true
+      })
       .expect(200)
       .expect((res) => {
         expect(res.body.note.text).toBe('update text');
@@ -165,7 +162,10 @@ describe('PATCH /notes/:id', () => {
     var hexId = notes[1]._id.toHexString()
     request(app)
       .patch(`/notes/${hexId}`)
-      .send({text: 'update text', completed: false})
+      .send({
+        text: 'update text',
+        completed: false
+      })
       .expect(200)
       .expect((res) => {
         expect(res.body.note.text).toBe('update text');
@@ -176,42 +176,89 @@ describe('PATCH /notes/:id', () => {
   });
 });
 
+describe('GET /users/me', () => {
+  it('should return user if authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+
+  it('should return 401 if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({})
+      })
+      .end(done);
+  });
+});
+
 describe('POST /users', () => {
   it('should create a new user', (done) => {
     var email = 'luis@luis.com';
     var password = 'p45w0rd';
-    var tokens = [
-      {
-        access: 'auth'
-      },
-      {
-        token: 'at0k3n'
-      }
-    ]
+
     request(app)
       .post('/users')
       .send({
         email,
-        password,
-        tokens
+        password
       })
       .expect(200)
       .expect((res) => {
-        expect(res.body.email).toBe(email)
-        expect(res.body.password).toBe(password)
+        expect(res.headers['x-auth']).toExist();
+        expect(res.body._id).toExist();
+        expect(res.body.email).toBe(email);
       })
       .end((err, res) => {
         if (err) {
           return done(err);
         }
 
-        Note.find({
+        User.findOne({
           email
-        }).then((users) => {
-          expect(users.length).toBe(1);
-          expect(users[0].email).toBe(email);
+        }).then((user) => {
+          expect(user).toExist();
+          expect(user.password).toNotBe(password);
           done();
         }).catch((err) => done(err));
       });
+  });
+
+  it('should return validation errors if request invalid', (done) => {
+    var email = 'luis';
+    var password = 'p45w0rd';
+
+    request(app)
+      .post('/users')
+      .send({
+        email,
+        password
+      })
+      .expect(400)
+      .end(done);
+
+  });
+
+  it('should not create user if email in use', (done) => {
+    var email = users[1].email;
+    var password = 'p45w0rd';
+
+    request(app)
+      .post('/users')
+      .send({
+        email,
+        password
+      })
+      .expect(400)
+      .end(done);
+
   });
 });
